@@ -4,4 +4,6 @@
 
 ## 0.1.0
 
-- Added drop-connect wrapper
+### Added
+
+- Drop-connect wrapper

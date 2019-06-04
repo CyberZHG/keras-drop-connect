@@ -35,7 +35,7 @@ class DropConnect(keras.layers.Wrapper):
 
         def dropped_weight(weight, drop_connect_rate):
             def _dropped_weight():
-                return K.dropout(weight, drop_connect_rate, K.shape(weight), seed=self.seed)
+                return K.dropout(weight, drop_connect_rate, seed=self.seed)
             return _dropped_weight
 
         origins = {}
@@ -44,7 +44,8 @@ class DropConnect(keras.layers.Wrapper):
                 w = getattr(self.layer, name)
                 if w in self.layer.trainable_weights:
                     origins[name] = w
-                    setattr(self.layer, name, K.in_train_phase(dropped_weight(w, rate), w, training=training))
+                    if 0. < rate < 1.:
+                        setattr(self.layer, name, K.in_train_phase(dropped_weight(w, rate), w, training=training))
         else:
             for name in dir(self.layer):
                 try:
@@ -53,7 +54,8 @@ class DropConnect(keras.layers.Wrapper):
                     continue
                 if w in self.layer.trainable_weights:
                     origins[name] = w
-                    setattr(self.layer, name, K.in_train_phase(dropped_weight(w, self.rate), w, training=training))
+                    if 0. < self.rate < 1.:
+                        setattr(self.layer, name, K.in_train_phase(dropped_weight(w, self.rate), w, training=training))
         outputs = self.layer.call(inputs, **kwargs)
         for name, w in origins.items():
             setattr(self.layer, name, w)
