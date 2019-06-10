@@ -4,7 +4,7 @@ from .backend import backend as K
 
 class DropConnect(keras.layers.Wrapper):
 
-    def __init__(self, layer, rate=0.0, seed=None, **kwargs):
+    def __init__(self, layer, rate=0.0, seed=None, scale=True, **kwargs):
         super(DropConnect, self).__init__(layer, **kwargs)
         if isinstance(rate, dict):
             for name in list(rate.keys()):
@@ -13,6 +13,7 @@ class DropConnect(keras.layers.Wrapper):
             rate = min(1., max(0., rate))
         self.rate = rate
         self.seed = seed
+        self.scale = scale
         self.supports_masking = self.layer.supports_masking
 
     def build(self, input_shape=None):
@@ -31,11 +32,14 @@ class DropConnect(keras.layers.Wrapper):
         if keras.utils.generic_utils.has_arg(self.layer.call, 'training'):
             kwargs['training'] = training
         if keras.utils.generic_utils.has_arg(self.layer.call, 'mask'):
-            kwargs['mask'] = training
+            kwargs['mask'] = mask
 
         def dropped_weight(weight, drop_connect_rate):
             def _dropped_weight():
-                return K.dropout(weight, drop_connect_rate, seed=self.seed)
+                dropped = K.dropout(weight, drop_connect_rate, seed=self.seed)
+                if self.scale:
+                    dropped /= K.constant(1.0 - drop_connect_rate)
+                return dropped
             return _dropped_weight
 
         origins = {}
@@ -65,6 +69,7 @@ class DropConnect(keras.layers.Wrapper):
         config = {
             'rate': self.rate,
             'seed': self.seed,
+            'scale': self.scale,
         }
         base_config = super(DropConnect, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

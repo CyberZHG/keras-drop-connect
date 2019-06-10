@@ -2,7 +2,8 @@ import os
 import tempfile
 from unittest import TestCase
 import numpy as np
-from keras_drop_connect.backend import keras, EAGER_MODE
+from keras_drop_connect.backend import keras
+from keras_lr_multiplier.optimizers import AdamV2
 from keras_drop_connect import DropConnect
 
 
@@ -30,14 +31,18 @@ class TestDropConnect(TestCase):
         if generator is None:
             generator = self._gen_dense_data
         x, y, w = generator(65536)
-        model.compile('adam', 'sparse_categorical_crossentropy')
+        model.compile(AdamV2(), 'sparse_categorical_crossentropy')
         model.fit(x, y,
                   epochs=10,
                   callbacks=[keras.callbacks.EarlyStopping(monitor='loss', patience=2, min_delta=1e-3)])
-        if not EAGER_MODE:
-            model_path = os.path.join(tempfile.gettempdir(), 'keras_drop_connect_%f.h5' % np.random.random())
-            model.save(model_path)
-            model = keras.models.load_model(model_path, custom_objects={'DropConnect': DropConnect})
+
+        model_path = os.path.join(tempfile.gettempdir(), 'keras_drop_connect_%f.h5' % np.random.random())
+        model.save(model_path)
+        model = keras.models.load_model(model_path, {
+            'AdamV2': AdamV2,
+            'DropConnect': DropConnect,
+        })
+
         x, y, _ = generator(1024, w)
         predicted = model.predict(x).argmax(axis=-1)
         self.assertLess(np.sum(np.not_equal(y, predicted)), 100)
@@ -82,7 +87,7 @@ class TestDropConnect(TestCase):
         model = keras.models.Sequential()
         model.add(keras.layers.Embedding(input_dim=10, output_dim=5, mask_zero=True, input_shape=(10,)))
         model.add(DropConnect(
-            keras.layers.Bidirectional(keras.layers.GRU(units=2, unroll=True)),
+            keras.layers.Bidirectional(keras.layers.GRU(units=2)),
             rate=0.1,
         ))
         model.add(keras.layers.Dense(units=2, activation='softmax'))
