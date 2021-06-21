@@ -2,7 +2,7 @@ from .backend import keras
 from .backend import backend as K
 
 
-class DropConnect(keras.layers.Wrapper):
+class DropConnect(keras.layers.wrappers.Wrapper):
 
     def __init__(self, layer, rate=0.0, seed=None, scale=True, **kwargs):
         super(DropConnect, self).__init__(layer, **kwargs)
