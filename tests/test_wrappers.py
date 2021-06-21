@@ -3,7 +3,6 @@ import tempfile
 from unittest import TestCase
 import numpy as np
 from keras_drop_connect.backend import keras
-from keras_lr_multiplier.optimizers import AdamV2
 from keras_drop_connect import DropConnect
 
 
@@ -31,7 +30,7 @@ class TestDropConnect(TestCase):
         if generator is None:
             generator = self._gen_dense_data
         x, y, w = generator(65536)
-        model.compile(AdamV2(), 'sparse_categorical_crossentropy')
+        model.compile('adam', 'sparse_categorical_crossentropy')
         model.fit(x, y,
                   epochs=10,
                   callbacks=[keras.callbacks.EarlyStopping(monitor='loss', patience=2, min_delta=1e-3)])
@@ -39,7 +38,6 @@ class TestDropConnect(TestCase):
         model_path = os.path.join(tempfile.gettempdir(), 'keras_drop_connect_%f.h5' % np.random.random())
         model.save(model_path)
         model = keras.models.load_model(model_path, {
-            'AdamV2': AdamV2,
             'DropConnect': DropConnect,
         })
 
