@@ -8,7 +8,7 @@
 ## Install
 
 ```bash
-pip install git+https://github.com/cyberzhg/keras-drop-connect
+pip install git+https://github.com/cyberzhg/keras-drop-connect.git
 ```
 
 ## Usage
